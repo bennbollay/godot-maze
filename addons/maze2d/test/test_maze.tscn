@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://bvgjg77y2e5eq"]
+
+[ext_resource type="Script" uid="uid://ccck8sj0yiowm" path="res://addons/maze2d/test/test_maze.gd" id="1_xtp3g"]
+[ext_resource type="Script" uid="uid://cdac2y2wgn1hp" path="res://addons/maze2d/shape/circle_resource.gd" id="2_l4rux"]
+
+[sub_resource type="Resource" id="Resource_02hs7"]
+script = ExtResource("2_l4rux")
+max_theta = 3.929696077327833
+min_level = 2
+max_level = 9
+level_width = 50.0
+lowest_level_room_theta = 0.5503197664463321
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_atkym"]
+size = Vector2(456.78125, 459.57813)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tww08"]
+size = Vector2(590, 456.15308)
+
+[node name="TestMaze" type="Node2D" unique_id=1172685870]
+script = ExtResource("1_xtp3g")
+monitor = true
+maze_seed = 10
+square_width = 34
+square_height = 35
+show_room_labels = false
+show_boundary = false
+circle_resource = SubResource("Resource_02hs7")
+
+[node name="Label" type="RichTextLabel" parent="." unique_id=1633890996]
+offset_left = 61.0
+offset_top = 17.0
+offset_right = 1091.0
+offset_bottom = 138.0
+theme_override_font_sizes/normal_font_size = 28
+theme_override_font_sizes/mono_font_size = 28
+bbcode_enabled = true
+text = "Change the settings on [code]TestMaze[/code] to control how these mazes are generated.
+(Enable [code]Monitor[/code] to see live changes)
+(Resize the Shapes zoom in)
+"
+horizontal_alignment = 1
+
+[node name="Maze" type="CollisionShape2D" parent="." unique_id=1441970656]
+position = Vector2(298, 394.78906)
+shape = SubResource("RectangleShape2D_atkym")
+
+[node name="Maze2" type="CollisionShape2D" parent="." unique_id=1767354807]
+position = Vector2(843.3906, 394.07654)
+shape = SubResource("RectangleShape2D_tww08")
