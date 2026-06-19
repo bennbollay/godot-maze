@@ -4,6 +4,10 @@ This project creates a variety of ways of creating differently-shaped 2D mazes.
 
 # Video Example
 
+
+https://github.com/user-attachments/assets/666c1d32-1dc5-4774-b84a-54fedae012a4
+
+
 # Usage
 
 Open the [addons/maze2d/test/test_maze.tscn](https://github.com/bennbollay/godot-maze/tree/main/addons/maze2d/test) scene for examples.
@@ -44,6 +48,28 @@ the console itself.
 
 _NOTE:_ There isn't any good font for drawing a square maze, so the characters used might be confusing - the maze is the
 inside part of the small close-together lines, not the space between the double-lines.
+
+## Accessing the contents of the maze
+
+Each maze object is broken up into Rooms, Walls, and/or Doors.  Because geometry plays a large part here, the interfaces
+for accessing these elements isn't the same between the two shapes.
+
+### Square Mazes
+
+For each `MazeSquare.Shape`, you can use the `room(x, y)` method to get a specific `MazeSquare.Room` object.  With this
+object in hand, the `walls()` returns an array of attached rooms (or `null`) in the `North, West, East, South` ordering.
+This can be used to determine which rooms are connected to what other rooms, or instead of walls blocking them.
+
+### Circular Mazes
+
+Circular mazes are broken into "levels", which are then subdivided by the angle that the room is present at.  Each
+room has the same "arc length", which is to say, the same length of the circle as it's innermost length, and tries
+to use the space as efficiently as possible (if `room_justify` is set to `EXPAND_TO_FIT` in the `MazeCircleResource`)
+or centered (when set to `CENTER`). The maze itself can describe any number of levels, and doesn't have to start with
+a "core".
+
+In order to iterate through the maze, I recommend examining how the `MazeCirclePrint.canvas()` function iterates
+across the different rooms and doors.  Feel free to request examples by creating a ticket, as well!
 
 ## Supported Algorithms
 

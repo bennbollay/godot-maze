@@ -53,8 +53,6 @@ static func canvas(canvas: CanvasItem, shape: MazeCircle.Shape, rect: Rect2, sho
 	var min_l = shape.min_level
 	var max_l = shape.max_level
 
-	# shape.print_console()
-
 	# Draw the inner circle
 	if min_l > 0:
 		canvas.draw_arc(center, shape.radius(min_l) * scaling, min_t, max_t, 100, border_color)
