@@ -5,11 +5,12 @@
 
 [sub_resource type="Resource" id="Resource_02hs7"]
 script = ExtResource("2_l4rux")
-max_theta = 3.929696077327833
-min_level = 2
-max_level = 9
+min_theta = 2.0943951023931953
+max_theta = 4.1887902047863905
+min_level = 1
+max_level = 8
 level_width = 50.0
-lowest_level_room_theta = 0.5503197664463321
+lowest_level_room_theta = 0.7764097177496775
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_atkym"]
 size = Vector2(456.78125, 459.57813)
@@ -47,3 +48,4 @@ shape = SubResource("RectangleShape2D_atkym")
 [node name="Maze2" type="CollisionShape2D" parent="." unique_id=1767354807]
 position = Vector2(843.3906, 394.07654)
 shape = SubResource("RectangleShape2D_tww08")
+debug_color = Color(0, 0.6, 0.69803923, 0)
