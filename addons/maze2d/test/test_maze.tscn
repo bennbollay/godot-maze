@@ -19,7 +19,6 @@ size = Vector2(590, 456.15308)
 
 [node name="TestMaze" type="Node2D" unique_id=1172685870]
 script = ExtResource("1_xtp3g")
-monitor = true
 maze_seed = 10
 square_width = 34
 square_height = 35
