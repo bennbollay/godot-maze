@@ -1,5 +1,6 @@
 @tool
 extends Resource
+
 class_name MazeCircleResource
 
 ## Theta that the maze arc starts at

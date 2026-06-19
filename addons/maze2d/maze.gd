@@ -4,6 +4,6 @@
 ## Simple implementation of a recursive backtracker
 #
 #class MazeShape:
-	#func get_neighbors(room: MazeRoom) -> Array[MazeRoom]:
-		#return []
-	#
+#func get_neighbors(room: MazeRoom) -> Array[MazeRoom]:
+#return []
+#
