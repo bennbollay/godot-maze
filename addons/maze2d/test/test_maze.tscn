@@ -5,12 +5,12 @@
 
 [sub_resource type="Resource" id="Resource_02hs7"]
 script = ExtResource("2_l4rux")
-min_theta = 2.0943951023931953
-max_theta = 4.1887902047863905
-min_level = 1
-max_level = 8
+min_theta = 0.4426329515982819
+max_theta = 4.383115163703439
+max_level = 6
 level_width = 50.0
-lowest_level_room_theta = 0.7764097177496775
+lowest_level_room_theta = 2.1975091546010206
+room_justify = 1
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_atkym"]
 size = Vector2(456.78125, 459.57813)
@@ -20,7 +20,9 @@ size = Vector2(590, 456.15308)
 
 [node name="TestMaze" type="Node2D" unique_id=1172685870]
 script = ExtResource("1_xtp3g")
-maze_seed = 10
+monitor = true
+maze_seed = 1
+lock_rooms = 2
 square_width = 34
 square_height = 35
 show_room_labels = false

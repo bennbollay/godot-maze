@@ -39,6 +39,12 @@ var monitor_timer: Timer
 		maze_seed = i
 		on_new_maze_seed.emit()
 
+## Randomly lock some rooms in each maze for demonstration purposes
+@export var lock_rooms: int = 0:
+	set(i):
+		lock_rooms = i
+		on_new_maze_seed.emit()
+
 @export_group("Square")
 ## Number of "rooms" wide
 @export var square_width: int = 10:
@@ -70,15 +76,41 @@ func shape_to_rect(shape: RectangleShape2D, pos: Vector2) -> Rect2:
 
 ## Create an example circular maze.
 func recreate_cm():
+	var rand := RandomNumberGenerator.new()
+	rand.seed = maze_seed
+
 	cm = MazeCircle.Shape.new(circle_resource)
 	cm.generate()
+	
+	# Demonstrate excluding some random rooms from the maze
+	for i in range(lock_rooms):
+		var l: int = rand.randi_range(cm.min_level + 1, cm.max_level - 1)
+		var rooms_on_level: Array = cm.rooms_by_l(l)
+		var room: MazeCircle.Room = rooms_on_level[rand.randi_range(0, rooms_on_level.size() - 1)]
+		for door: MazeCircle.Door in room.doors():
+			door.locked = true
+		
 
 	MazeAlgoRecursiveBacktracker.generate(cm, cm.room(0, 0), maze_seed)
 
 
 ## Create an example square maze.
 func recreate_sm():
+	var rand := RandomNumberGenerator.new()
+	rand.seed = maze_seed
+
 	sm = MazeSquare.Shape.new(square_width, square_height)
+
+	# Demonstrate excluding some random rooms from the maze
+	for i in range(lock_rooms):
+		var x: int = rand.randi_range(0, sm.width - 1)
+		var y: int = rand.randi_range(0, sm.height - 1)
+		
+		# Lock all of the doors to this room.
+		for door in sm.room(x, y).doors():
+			sm.room(x, y).lock_door(door)
+
+
 	MazeAlgoRecursiveBacktracker.generate(sm, sm.room(0, 0), maze_seed)
 
 

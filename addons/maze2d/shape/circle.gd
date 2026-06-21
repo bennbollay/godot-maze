@@ -14,6 +14,16 @@ class Door:
 	var room1: Room
 	var room2: Room
 	var open: bool = false
+	
+	## Can be used to exclude a room from the pathfinding
+	var _locked: bool = false
+	var locked: bool = false:
+		set(v):
+			_locked = v
+			room2.door_to(room1)._locked = _locked
+
+		get():
+			return _locked
 
 	var _type: DoorType
 	var l: int = 0
@@ -47,6 +57,9 @@ class Door:
 			t0 = max(rm1.t0(), rm2.t0())
 			t1 = min(rm1.t1(), rm2.t1())
 
+	func arclength() -> float:
+		assert(t1 > t0)
+		return radius * (t1 - t0)
 
 	func to_str():
 		var s = " {" if not open else " |"
@@ -170,10 +183,15 @@ class Room extends MazeRoom:
 		return maze as Shape
 
 
-	# Returns true if open, false if closed
+	## Returns true if open, false if closed
 	func walls() -> Array:
 		return _doors.map(func(d: Door): return d.open)
 
+	## Return all of the doors that are cononect to valid Rooms
+	func doors() -> Array:
+		return _doors.filter(func(d: Door) -> bool:
+			return d.room2 != null
+		)
 
 	func t0() -> float:
 		return t - M().theta_by_l(l) / 2
@@ -207,6 +225,9 @@ class Room extends MazeRoom:
 
 	func door_to(room: MazeRoom) -> Door:
 		var wall = _neighbors.find(room)
+		if wall < 0:
+			return null
+			
 		assert(wall >= 0)
 
 		return _doors[wall]
@@ -219,13 +240,19 @@ class Room extends MazeRoom:
 
 	func open_wall(room: MazeRoom):
 		var door: Door = door_to(room)
+		if door.locked:
+			return
 		assert(door.room1 == self)
 		assert(door.room2 == room)
 		door.open = true
 
 
+	## Return the neighbors that are unvisited and have unlocked doors
+	## between them.
 	func get_unvisited_neighbors() -> Array:
-		return _neighbors.filter(func(s) -> bool: return not s.visited)
+		return _neighbors.filter(func(r: Room) -> bool:
+			return not r.visited and not door_to(r).locked
+		)
 
 
 class CenterRoom extends Room:
@@ -272,6 +299,9 @@ class Shape extends MazeShape:
 	var room_justify: MazeCircleResource.CircleJustify:
 		get():
 			return resource.room_justify
+	var minimum_door_size: float:
+		get():
+			return resource.min_door_sz * room_length
 
 	# Collection objects for various room and level details
 	var rooms_by_level: Array = []
@@ -317,6 +347,14 @@ class Shape extends MazeShape:
 
 	## Generate the rooms using the supplied MazeCircleResource
 	func generate():
+		create_rooms()
+		initialize_rooms()
+	
+	
+	## Create all of the rooms in the specified region.  This can be called
+	## manually before [code]initialize_rooms()[/code] is called to manually
+	## remove rooms, creating voids within the maze.
+	func create_rooms():
 		# Either r=1 or r=min_radius to calculate the basic room arclength
 		room_length = max(lowest_level_room_theta * radius(1), lowest_level_room_theta * radius(min_level))
 
@@ -342,9 +380,6 @@ class Shape extends MazeShape:
 
 			var per_room_theta := theta_by_arclength(room_length, l)
 
-			# Make this an option in the future.
-			#print("Theta by arclength: ", rad_to_deg(theta_by_arclength(arc_remainder / num_rooms, l)))
-			#print(rad_to_deg(per_room_theta))
 			if (min_theta == 0 and max_theta == 2 * PI) or room_justify == MazeCircleResource.CircleJustify.EXPAND_TO_FIT:
 				per_room_theta += theta_by_arclength(arc_remainder / num_rooms, l)
 			else:
@@ -352,7 +387,6 @@ class Shape extends MazeShape:
 				end_theta -= theta_by_arclength(arc_remainder / 2, l)
 				per_room_theta = (end_theta - start_theta) / num_rooms
 
-			#print("XX", rad_to_deg(per_room_theta))
 			rooms_by_level[level] = []
 			theta_by_level[level] = per_room_theta
 
@@ -361,16 +395,27 @@ class Shape extends MazeShape:
 				var new_room := Room.new(self, room_center, l)
 				rooms_by_level[level].push_back(new_room)
 
+	## Iterate through all of the rooms created on each level, identifying
+	## neighbors and creating Doors between the different rooms.
+	func initialize_rooms():
 		# Now that all the rooms have been created, set up the doors
 		for level in rooms_by_level:
 			for room: Room in level:
 				room._setup()
 
-
-	# Removed an epsilon check here because it made square
-	# corners "true"
-	func theta_lte(t0: float, t1: float) -> bool:
-		return t0 < t1
+		# Lock doors that are too small now that all of the doors
+		# are created (setting locked expects the reciprocal door
+		# to exist).
+		#
+		# Technically only need to go to max_level-1 but whatever.
+		for level in rooms_by_level:
+			for room: Room in level:
+				for door: Door in room.doors():
+					if door._type != Door.DoorType.DOOR_ARC:
+						continue
+						
+					if door.arclength() < minimum_door_size:
+						door.locked = true
 
 
 	## Get all of the rooms that intersect the region between theta_0 and
@@ -389,6 +434,7 @@ class Shape extends MazeShape:
 		)
 
 
+	## The total number of rooms in the maze.
 	func size() -> int:
 		var s: int = 0
 		for rooms in rooms_by_level:
@@ -396,5 +442,10 @@ class Shape extends MazeShape:
 		return s
 
 
+	## Get a specific room at that level.  Stable for a given map configuration.
 	func room(l: int, offset: int) -> Room:
 		return rooms_by_l(l)[offset]
+
+	## Remove a specific room from the maze.
+	func remove_room(room: Room):
+		rooms_by_l(room.l).erase(room)

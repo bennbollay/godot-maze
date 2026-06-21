@@ -6,11 +6,18 @@ class Room extends MazeRoom:
 	var x: int
 	var y: int
 
+	enum {
+		N = 0,
+		W = 1,
+		E = 2,
+		S = 3
+	}
 	#    0
 	#  1   2
 	#    3
-	const recip_wall: Array[int] = [3, 2, 1, 0]
+	const recip_wall: Array[int] = [S, E, W, N]
 	var _walls: Array = [null, null, null, null]
+	var _locked_walls: Array = [false, false, false, false]
 
 
 	func _init(maze_: MazeShape, x_: int, y_: int) -> void:
@@ -22,15 +29,40 @@ class Room extends MazeRoom:
 	func walls() -> Array:
 		return _walls
 
+	func doors() -> Array:
+		return [N, S, E, W]
+		
+	func dir_to_vec(dir: int) -> Vector2i:
+		match dir:
+			N:
+				return Vector2i(x, y - 1)
+			W:
+				return Vector2i(x - 1, y)
+			E:
+				return Vector2i(x + 1, y)
+			S:
+				return Vector2i(x, y + 1)
+		assert(false)
+		return Vector2i.ZERO
+
+	## Lock N, S, E, or W to be untraversable.
+	func lock_door(dir: int):
+		_locked_walls[dir] = true
+		var v := dir_to_vec(dir)
+		var sqm: Shape = maze
+		var other_room := sqm.room(v.x, v.y)
+		if not other_room:
+			return
+		other_room._locked_walls[recip_wall[dir]] = true
 
 	func is_wall(i: int) -> int:
-		return 1 if _walls[i] == null else 0
+		return 1 if _walls[i] == null or _locked_walls[i] else 0
 
 
 	# Match the example
 	func walls_id() -> int:
 		# WSEN
-		return is_wall(1) << 3 | is_wall(3) << 2 | is_wall(2) << 1 | is_wall(0)
+		return is_wall(W) << 3 | is_wall(S) << 2 | is_wall(E) << 1 | is_wall(N)
 
 
 	## Joins two rooms, even if they're on separate Mazes
@@ -67,11 +99,13 @@ class Room extends MazeRoom:
 	func get_unvisited_neighbors() -> Array:
 		var sqm: Shape = maze
 		return [
-			sqm.room(x, y - 1),
-			sqm.room(x - 1, y),
-			sqm.room(x + 1, y),
-			sqm.room(x, y + 1),
-		].filter(func(s) -> bool: return is_instance_valid(s) and not s.visited)
+			sqm.room(x, y - 1) if not _locked_walls[N] else null,
+			sqm.room(x - 1, y) if not _locked_walls[W] else null,
+			sqm.room(x + 1, y) if not _locked_walls[E] else null,
+			sqm.room(x, y + 1) if not _locked_walls[S] else null,
+		].filter(func(r: Room) -> bool:
+			return is_instance_valid(r) and not r.visited
+		)
 
 
 class Shape extends MazeShape:
@@ -142,25 +176,5 @@ class Shape extends MazeShape:
 		return lns
 
 
-	func print_console():
-		print("\n".join(to_str()))
-
-
 	func get_line_width(font: Font, ln: String) -> Vector2:
 		return font.get_string_size(ln)
-
-
-	func print_editor(scene: Node2D, where: Rect2):
-		if where.size.x == 0 or where.size.y == 0:
-			return
-
-		var LEGACY_COMPUTING_FONT := load("uid://b2itbw3sn4cnx")
-		var font := LEGACY_COMPUTING_FONT
-
-		# Scale the font to fit within the rect
-		var lns := to_str()
-		var w := get_line_width(font, lns[0]).x
-		var h := get_line_width(font, lns[0]).y * lns.size()
-		var new_size = round(min(where.size.x / w, where.size.y / h) * 16)
-
-		scene.draw_multiline_string(font, where.position, "\n" + "\n".join(lns), HORIZONTAL_ALIGNMENT_LEFT, -1, new_size)
