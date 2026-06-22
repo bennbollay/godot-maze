@@ -2,6 +2,8 @@ extends RefCounted
 
 class_name MazeCirclePrint
 
+static var LEGACY_COMPUTING_FONT: Font
+
 static func console(shape: MazeCircle.Shape):
 	print(
 		"Circle: %.0f to %.0f x [%d -> %d] with %d rooms %.2f°/%f long" % [
@@ -31,7 +33,8 @@ static func console(shape: MazeCircle.Shape):
 
 static func canvas(canvas: CanvasItem, shape: MazeCircle.Shape, rect: Rect2, show_labels: bool = true, show_boundry: bool = true):
 	var center := Vector2.ZERO
-	var LEGACY_COMPUTING_FONT := load("uid://b2itbw3sn4cnx")
+	if not LEGACY_COMPUTING_FONT:
+		LEGACY_COMPUTING_FONT = load("uid://b2itbw3sn4cnx")
 	var font := LEGACY_COMPUTING_FONT
 
 	var scaling := min(rect.size.x, rect.size.y) as float / (2 * shape.max_level * shape.level_width)

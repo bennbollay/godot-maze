@@ -12,7 +12,7 @@ static func generate(maze: MazeShape, starting_room: MazeRoom, maze_seed: int = 
 		rand.seed = maze_seed
 
 	var walker: MazeRoom = starting_room
-	var room_stack: Array[MazeRoom] = []
+	var room_stack: Array = []
 
 	var cnt := maze.size()
 	while cnt > 0:

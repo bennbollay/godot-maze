@@ -16,7 +16,7 @@ class Room extends MazeRoom:
 	#  1   2
 	#    3
 	const recip_wall: Array[int] = [S, E, W, N]
-	var _walls: Array = [null, null, null, null]
+	var _walls: Array[WeakRef] = [null, null, null, null]
 	var _locked_walls: Array = [false, false, false, false]
 
 
@@ -25,9 +25,11 @@ class Room extends MazeRoom:
 		x = x_
 		y = y_
 
+	func M() -> Shape:
+		return maze_ref.get_ref() as Shape
 
 	func walls() -> Array:
-		return _walls
+		return _walls.map(func (wr: WeakRef): return wr.get_ref())
 
 	func doors() -> Array:
 		return [N, S, E, W]
@@ -45,11 +47,22 @@ class Room extends MazeRoom:
 		assert(false)
 		return Vector2i.ZERO
 
+	func room_to_dir(sqr: Room) -> int:
+		if sqr.x < x:
+			return W
+		elif sqr.x > x:
+			return E
+
+		if sqr.y < y:
+			return N
+
+		return S
+
 	## Lock N, S, E, or W to be untraversable.
 	func lock_door(dir: int):
 		_locked_walls[dir] = true
 		var v := dir_to_vec(dir)
-		var sqm: Shape = maze
+		var sqm: Shape = M()
 		var other_room := sqm.room(v.x, v.y)
 		if not other_room:
 			return
@@ -65,39 +78,20 @@ class Room extends MazeRoom:
 		return is_wall(W) << 3 | is_wall(S) << 2 | is_wall(E) << 1 | is_wall(N)
 
 
-	## Joins two rooms, even if they're on separate Mazes
-	func join_rooms(room, wall: int):
-		_walls[wall] = room
-		room._walls[recip_wall[wall]] = self
+	## Joins two rooms, even if they're on separate Mazes types
+	func join_rooms(room: Variant, wall: int):
+		_walls[wall] = weakref(room)
+		room._walls[recip_wall[wall]] = weakref(self)
 
 
 	func open_wall_between(room: MazeRoom):
 		var sqr: Room = room
-
-		if sqr.x < x:
-			assert(y == sqr.y)
-			assert(_walls[1] == null)
-			_walls[1] = room
-			room._walls[2] = self
-		elif sqr.x > x:
-			assert(y == sqr.y)
-			assert(_walls[2] == null)
-			_walls[2] = room
-			room._walls[1] = self
-		else:
-			assert(x == sqr.x)
-			if sqr.y < y:
-				assert(_walls[0] == null)
-				_walls[0] = room
-				room._walls[3] = self
-			else:
-				assert(_walls[3] == null)
-				_walls[3] = room
-				room._walls[0] = self
-
+		var dir: int = room_to_dir(room)
+		
+		join_rooms(room, dir)
 
 	func get_unvisited_neighbors() -> Array:
-		var sqm: Shape = maze
+		var sqm: Shape = M()
 		return [
 			sqm.room(x, y - 1) if not _locked_walls[N] else null,
 			sqm.room(x - 1, y) if not _locked_walls[W] else null,
@@ -109,7 +103,7 @@ class Room extends MazeRoom:
 
 
 class Shape extends MazeShape:
-	var rooms: Array[Room]
+	var rooms: Array
 	var width: int
 	var height: int
 

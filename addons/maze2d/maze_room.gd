@@ -1,14 +1,14 @@
 @abstract
-extends Node
+extends RefCounted
 
 class_name MazeRoom
 
-var maze: MazeShape
+var maze_ref: WeakRef
 var visited: bool = false
 
 
 func _init(maze_: MazeShape) -> void:
-	maze = maze_
+	maze_ref = weakref(maze_)
 
 
 @abstract func walls() -> Array[int]

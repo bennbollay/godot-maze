@@ -13,6 +13,7 @@ signal on_new_maze_seed()
 
 		monitor = v
 		if not monitor and monitor_timer:
+			print("Stopping monitor timer...")
 			monitor_timer.queue_free()
 			monitor_timer = null
 			return
@@ -27,8 +28,8 @@ signal on_new_maze_seed()
 
 					$Maze.queue_redraw()
 					$Maze2.queue_redraw()
-					queue_redraw()
 			)
+			print("Starting monitor timer...")
 			monitor_timer.start(0.1)
 
 var monitor_timer: Timer
@@ -128,16 +129,22 @@ func _ready() -> void:
 
 	$Maze.draw.connect(
 		func():
+			if not sm:
+				return
 			var rect := shape_to_rect($Maze.shape as RectangleShape2D, $Maze.global_position)
 			MazeSquarePrint.canvas($Maze, sm, rect)
 	)
 	$Maze2.draw.connect(
 		func():
+			if not cm:
+				return
 			var rect := shape_to_rect($Maze2.shape as RectangleShape2D, $Maze2.global_position)
 			MazeCirclePrint.canvas($Maze2, cm, rect, show_room_labels, show_boundary)
 	)
 
 
 func _process(delta: float) -> void:
-	$Maze.queue_redraw()
-	$Maze2.queue_redraw()
+	if sm:
+		$Maze.queue_redraw()
+	if cm:
+		$Maze2.queue_redraw()

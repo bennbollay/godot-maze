@@ -11,8 +11,16 @@ class Door:
 		DOOR_RADIAL,
 	}
 
-	var room1: Room
-	var room2: Room
+	var _room1_ref: WeakRef
+	var _room2_ref: WeakRef
+	var room1: Room:
+		get(): return _room1_ref.get_ref()
+		set(r): _room1_ref = weakref(r)
+			
+	var room2: Room:
+		get(): return null if not _room2_ref else _room2_ref.get_ref()
+		set(r): _room2_ref = weakref(r)
+			
 	var open: bool = false
 	
 	## Can be used to exclude a room from the pathfinding
@@ -122,7 +130,8 @@ class Room extends MazeRoom:
 	## Distance to this room, in equi-distant levels
 	var l: int
 
-	var _neighbors: Array
+	# Array of WeakRef[Room]
+	var _neighbor_refs: Array
 	var _doors: Array
 
 
@@ -180,7 +189,7 @@ class Room extends MazeRoom:
 
 
 	func M() -> Shape:
-		return maze as Shape
+		return maze_ref.get_ref() as Shape
 
 
 	## Returns true if open, false if closed
@@ -205,8 +214,8 @@ class Room extends MazeRoom:
 		var m := M()
 
 		# The two adjacent rooms on this level
-		var same_level = m.get_rooms(t - m.theta_by_l(l), t + m.theta_by_l(l), l)
-		same_level = same_level.filter(func(room): return room != self)
+		var neighbors: Array = m.get_rooms(t - m.theta_by_l(l), t + m.theta_by_l(l), l)
+		neighbors = neighbors.filter(func(room): return room != self)
 
 		# Rooms on the level higher.
 		var next_level = m.get_rooms(t0(), t1(), l + 1)
@@ -214,23 +223,21 @@ class Room extends MazeRoom:
 		# Rooms on the level lower.
 		var prev_level = m.get_rooms(t0(), t1(), l - 1)
 
-		_neighbors = Array(same_level)
-		_neighbors.append_array(next_level)
-		_neighbors.append_array(prev_level)
+		neighbors.append_array(next_level)
+		neighbors.append_array(prev_level)
+		
+		# Save the refs for future utility
+		_neighbor_refs = neighbors.map(func(r): return weakref(r))
 
 		_doors = []
-		for room: Room in _neighbors:
+		for room: Room in neighbors:
 			_doors.push_back(Door.new(self, room))
 
-
 	func door_to(room: MazeRoom) -> Door:
-		var wall = _neighbors.find(room)
-		if wall < 0:
-			return null
-			
-		assert(wall >= 0)
-
-		return _doors[wall]
+		for idx in range(_neighbor_refs.size()):
+			if _neighbor_refs[idx].get_ref() == room:
+				return _doors[idx]
+		return null
 
 
 	func open_wall_between(room: MazeRoom):
@@ -240,6 +247,7 @@ class Room extends MazeRoom:
 
 	func open_wall(room: MazeRoom):
 		var door: Door = door_to(room)
+		assert(door)
 		if door.locked:
 			return
 		assert(door.room1 == self)
@@ -250,8 +258,11 @@ class Room extends MazeRoom:
 	## Return the neighbors that are unvisited and have unlocked doors
 	## between them.
 	func get_unvisited_neighbors() -> Array:
-		return _neighbors.filter(func(r: Room) -> bool:
-			return not r.visited and not door_to(r).locked
+		return _neighbor_refs.filter(func(ref: WeakRef) -> bool:
+			var r: Room = ref.get_ref()
+			return r and not r.visited and not door_to(r).locked
+		).map(func(ref: WeakRef):
+			return ref.get_ref()
 		)
 
 
@@ -260,11 +271,11 @@ class CenterRoom extends Room:
 		var m := M()
 
 		# Rooms on the level higher for the entire arc
-		_neighbors = m.get_rooms(0, 2 * PI, 1)
+		_neighbor_refs = m.get_rooms(0, 2 * PI, 1).map(func(room): return weakref(room))
 
 		_doors = []
-		for room: Room in _neighbors:
-			_doors.push_back(Door.new(self, room))
+		for ref: WeakRef in _neighbor_refs:
+			_doors.push_back(Door.new(self, ref.get_ref()))
 
 
 	func t0() -> float:
